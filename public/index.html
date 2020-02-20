@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小说抓取</title>
+  <link rel="stylesheet" href="./bootstrap/css/bootstrap.min.css" />
+  <style>
+    .pointer {
+      cursor: pointer
+    }
+
+    .active {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">小说抓取 <small class="text-muted">v1.0.0</small></a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#">抓取</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#book">小说列表</a>
+          </li>
+        </ul>
+        <form class="form-inline my-2 my-lg-0">
+          <a class="btn btn-outline-success my-2 my-sm-0" target="_blank"
+            href="https://github.com/DennisGuo/novel-grapper">Github</a>
+        </form>
+      </div>
+    </div>
+  </nav>
+  <div class="container">
+
+    <form id="form" class="page my-4 hide">
+      <div class="form-group">
+        <label for="link">小说地址</label>
+        <input class="form-control" id="link" aria-describedby="link" name="link"
+          value="http://www.biquge001.com/Book/1/1012/" />
+        <small class="form-text text-muted">请输入小说目录所在URL.</small>
+      </div>
+      <div class="form-group">
+        <label for="category">目录选择器</label>
+        <input class="form-control" id="category" value="#list a" name="category" />
+      </div>
+      <div class="form-group">
+        <label for="content">内容选择器</label>
+        <input class="form-control" id="content" value="#content" name="content" />
+      </div>
+      <div class="form-group">
+        <label for="ad">广告过滤(多行)</label>
+        <textarea rows="8" class="form-control" id="ad" name="ad"><font color=red>笔趣阁</font>已启用最新域名：www.<font color=red>biquge001</font>.com ，请大家牢记最新域名并相互转告，谢谢！</p>
+www.biquge001.com
+（收藏和红票呢）
+笔趣阁 最新永久域名： ，请大家牢记本域名并相互转告，谢谢！
+ps.新书期红票收藏很重要</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" id="btn-to-grap">开始抓取</button>
+      <div class="progress fade" id="progress">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75"
+          aria-valuemin="0" aria-valuemax="100" style="width: 25%"></div>
+      </div>
+    </form>
+
+    <div id="book" class="page my-4 hide">
+      <div class="list-group"></div>
+
+      <nav aria-label="Page navigation example" class="mt-2">
+        <ul class="pagination justify-content-center" id="page">
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Content here -->
+  </div>
+
+
+  <!-- Modal -->
+  <div class="modal fade" id="categoryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="categoryModal">请确认目录和内容 <span id="bookTitle"></span> </h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col">
+              <ul id="categoryList" style="max-height:400px;overflow:auto;"></ul>
+            </div>
+            <div class="col">
+              <div class="progress fade" id="loading">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                  aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 25%"></div>
+              </div>
+              <textarea id="contentView" cols="30" rows="10" style="width: 100%;height: 100%;"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="btn-grap">确定抓取</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="taskModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">任务进度</h5>
+          <button type="button" class="close" data-dismiss="modal">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" id="taskSvgBox">
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="./jquery-3.4.1.min.js"></script>
+  <script src="./popper.min.js"></script>
+  <script src="./bootstrap/js/bootstrap.min.js"></script>
+  <script src="./bootstrap-notify.min.js"></script>
+  <script src="./svg.min.js"></script>
+  <script src="./api.js"></script>
+  <script src="./index.js"></script>
+</body>
+
+</html>

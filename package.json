@@ -1,0 +1,25 @@
+{
+  "name": "novel-grapper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DennisGuo/novel-grapper.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DennisGuo/novel-grapper/issues"
+  },
+  "homepage": "https://github.com/DennisGuo/novel-grapper#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "express": "^4.17.1",
+    "node-cache": "^5.1.0",
+    "sqlite3": "^4.1.1"
+  }
+}
