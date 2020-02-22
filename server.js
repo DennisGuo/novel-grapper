@@ -7,8 +7,8 @@ const express = require("express");
 const app = express();
 const port = 3000;
 
-const db = require("./database");
-const cache = require("./cache");
+const db = require("./server/database");
+const cache = require("./server/cache");
 
 // http.globalAgent =
 //     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36";
@@ -16,50 +16,85 @@ const cache = require("./cache");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// database
+// 获取规则
+app.get('/rule', (req, res) => {
+  db.getRule(rs => {
+    res.json(rs);
+  })
+})
+// 保存规则
+app.post('/rule', (req, res) => {
+  let rule = req.body;
+  db.saveRule(rule, rs => {
+    res.json(rs);
+  })
+})
+// 删除规则
+app.delete('/rule/:id', (req, res) => {
+  let id = req.params.id;
+  db.removeRule(id, rs => {
+    res.json(rs);
+  })
+})
 
+// 获取书籍和目录信息
 app.post("/category", (req, res) => {
   let item = req.body;
   let link = item.link;
-  db.getBookByLink(link, book => {
-    if (book) {
-      // console.log(res);e
-      res.json({
-        success: true,
-        data: book
-      });
+  let uri = url.parse(link);
+  let origin = uri.protocol + "//" + uri.host;
+  let domain = uri.host;
+  db.findRuleByDomain(domain, rule => {
+    if (!rule) {
+      res.json({ success: false, message: '没有此网站的抓取规则，请先进行添加' });
     } else {
-      // {
-      //     url: 'http://www.biquge001.com/Book/1/1012/',
-      //     category: '#list a',
-      //     content: '#content',
-      //     ad: '<font color=red>笔趣阁</font>已启用最新域名：www.<font color=red>biquge001</font>.com ，请大家牢记最新域名并相互转告，谢谢！'
-      //   }
-      getContent(link, body => {
-        // console.log(body);
-        let uri = url.parse(link);
-        let origin = uri.protocol + "//" + uri.host;
-        var $ = cheerio.load(body);
 
-        let title = $("h1").text();
-        item.title = title;
+      item.rule = rule;
 
-        let cheapter = [];
-        $(item.category).each((index, e) => {
-          let el = $(e);
-          let title = el.text();
-          //   let title = iconv.decode(el.text(), "gbk").toString();
-          cheapter.push({
-            title,
-            link: origin + el.attr("href")
+      db.getBookByLink(link, book => {
+        if (book) {
+          // console.log(res);e
+          res.json({
+            success: true,
+            data: book
           });
-        });
-        let data = { ...item, cheapter };
-        cache.set(link, data);
-        res.json({
-          success: true,
-          data
-        });
+        } else {
+          // {
+          //     url: 'http://www.biquge001.com/Book/1/1012/',
+          //     category: '#list a',
+          //     content: '#content',
+          //     ad: '<font color=red>笔趣阁</font>已启用最新域名：www.<font color=red>biquge001</font>.com ，请大家牢记最新域名并相互转告，谢谢！'
+          //   }
+          getContent(link, body => {
+            // console.log(body);
+
+            var $ = cheerio.load(body);
+
+
+            item.title = $('meta[property="og:title"]').attr('content');            // 标题
+            item.author = $('meta[property="og:novel:author"]').attr('content');    // 作者
+            item.avatar = $('meta[property="og:image"]').attr('content');      // 封面
+            item.description = $('meta[property="og:description"]').attr('content');      // 封面
+
+            let cheapter = [];
+            $(rule.category).each((index, e) => {
+              let el = $(e);
+              let title = el.text();
+              //   let title = iconv.decode(el.text(), "gbk").toString();
+              cheapter.push({
+                title,
+                domain,
+                link: origin + el.attr("href")
+              });
+            });
+            let data = { ...item, cheapter };
+            cache.set(link, data);
+            res.json({
+              success: true,
+              data
+            });
+          });
+        }
       });
     }
   });
@@ -69,12 +104,21 @@ app.post("/content", (req, res) => {
   let item = req.body;
   let link = item.link;
 
-  getCheapter(link, item.selector, item.ad, data => {
-    res.json({
-      success: true,
-      data
-    });
-  })
+  let uri = url.parse(link);
+  let domain = uri.host;
+
+  db.findRuleByDomain(domain, rule => {
+    if (rule) {
+      getCheapter(link, rule.content, rule.ad, data => {
+        res.json({
+          success: true,
+          data
+        });
+      });
+    }else{
+      res.json({ success: false, message: '没有此网站的抓取规则，请先进行添加' });
+    }
+  });
 
 });
 // 开始抓取任务
@@ -112,17 +156,18 @@ app.get('/download', (req, res) => {
   db.getBookById(id, rs => {
     if (rs.success) {
       let book = rs.data;
-      let arr = [],total=0;
-
-      for(let i=0;i<book.cheapter.length;i++){
+      let arr = [], total = 0;
+      let rt = Buffer.from('\r\n\r\n');
+      for (let i = 0; i < book.cheapter.length; i++) {
         let cp = book.cheapter[i];
         let bf = Buffer.from(cp.content);
         arr.push(bf);
-        total += bf.length;
+        arr.push(rt)
+        total += bf.length + rt.length;
       }
 
-      let data = Buffer.concat(arr,total);
-      
+      let data = Buffer.concat(arr, total);
+
       res.set({
         'Content-Type': 'text/plain',
         "Content-Disposition": `attachment;filename=${encodeURIComponent(book.title)}.txt`
@@ -233,7 +278,7 @@ const getCheapter = (link, selector, ad, callback) => {
 
 // 开启定时任务，获取未完成的任务
 setInterval(() => {
-  let size = 50; //每次获取未完成的内容
+  let size = 100; //每次获取未完成的内容
 
   db.getUnOverCheapter(size, res => {
     if (res.success) {
@@ -247,7 +292,7 @@ setInterval(() => {
     }
   });
 
-}, 30 * 1000);
+}, 3 * 1000);
 // 执行抓取cheapter 任务
 const fetchCheapter = (item) => {
   let { link, content, ad, id } = item;

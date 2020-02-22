@@ -12,6 +12,24 @@ var Api = {
         var url = `/book?page=${page}&size=${size}`;
         this.get(url,callback);
     },
+    getRule(callback){
+        var url = `/rule`;
+        this.get(url,callback);
+    },
+    saveRule(payload,callback){
+        var url = `/rule`;
+        this.post(url,payload,callback);
+    },
+    removeRule(id,callback){
+        var url = `/rule/${id}`;
+        this.delete(url,callback);
+    },
+
+
+
+    delete(url,callback){
+        this.ajax('DELETE',url,{},callback);
+    },
     get(url,callback){
         this.ajax('GET',url,{},callback);
     },

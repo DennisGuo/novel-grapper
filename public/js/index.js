@@ -23,9 +23,48 @@
         dom.on('click', '#btn-grap', toGrap)
         dom.on('click', '.btn-download', toDownload)
         dom.on('click', '.btn-read', toRead)
+        dom.on('click', '#btn-add-rule', toAddRule)
+        dom.on('click', '#to-save-rule', toSaveRule)
+        dom.on('click', '.btn-remove-rule', toRemoveRule)
+        dom.on('click', '.btn-modify-rule', toModifyRule)
 
 
         window.addEventListener("hashchange", loadHash, false);
+    }
+
+    function toRemoveRule(e){
+        var id = e.currentTarget.dataset.id;
+        Api.removeRule(id,res=>{
+            if(res.success){
+                noti('success','删除规则成功！');
+                loadRule();
+            }else{
+                noti('danger','删除规则失败：'+res.message);
+            }
+        })
+    }
+    function toModifyRule(e){
+        var id = e.currentTarget.dataset.id;
+    }
+
+    function toAddRule(){
+        $('#ruleModal').modal('show');
+    }
+    function toSaveRule(){
+        var data = getFormData($('#ruleForm'));
+        if(!data.domain){
+            noti('warning','请填写站点域名');
+            return;
+        }
+        Api.saveRule(data,res=>{
+            if(res.success){
+                noti('success','保存规则成功！');
+                $('#ruleModal').modal('hide');
+                loadRule();
+            }else{
+                noti('danger','保存规则失败！');
+            }
+        })
     }
 
     function loadHash() {
@@ -39,7 +78,11 @@
             target = $('.page#book');
             li = $('a[href="#book"]').parent('li')
             loadBookList(0);
-        } else {
+        } else if(hash == '#rule'){
+            target = $('.page#rule');
+            li = $('a[href="#rule"]').parent('li')
+            loadRule();
+        }else {
             target = $('.page#form');
             li = $('a[href="#"]').parent('li')
         }
@@ -47,6 +90,36 @@
         li.addClass('active');
         $('.nav-item').not(li).removeClass('active');
 
+    }
+
+    function loadRule(){
+        Api.getRule(res=>{
+            if(res.success){
+                var html = res.data.map(item=>{
+                    return `<div class="card my-2">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            ${item.domain}  
+                            <div class="btn-group btn-group-sm float-right">
+                                <button type="button" class="btn btn-secondary btn-modify-rule" data-id="${item.id}">修改</button>
+                                <button type="button" class="btn btn-danger btn-remove-rule" data-id="${item.id}">删除</button>
+                            </div>
+                        </h5>
+                    </div>
+                    <div class="card-body">                     
+                      <div class="card-text">
+                        章节：<input class="form-control" value="${item.category}" readonly/> <br>
+                        文章：<input class="form-control" value="${item.content}" readonly/> <br>
+                        广告：<textarea rows="4" class="inline form-control" readonly>${item.ad}</textarea>
+                      </div>
+                    </div>
+                  </div>`;
+                });
+                $('#rule-list').html(html.join(''));
+            }else{
+                noti('danger', '获取规则列表失败~')
+            }
+        });
     }
 
     function loadBookList(p) {
@@ -59,7 +132,7 @@
                     return `<div class="list-group-item list-group-item-action">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1">${item.title}</h5>
-                      <small>共 ${item.total} 章 </small>
+                      <small> 作者：${item.author}  共 ${item.total} 章 </small>
                     </div>
                     ${percent < 99 ?
                     `<div class="progress">
@@ -126,6 +199,10 @@
         }
     }
 
+    function page(p){
+
+    }
+
     function toSearch(e) {
         e.preventDefault();
 
@@ -176,8 +253,6 @@
         $('#categoryList').find('li[data-url="' + link + '"]').addClass('active').siblings().removeClass('active');
         var payload = {
             link: link,
-            selector: book.content,
-            ad: book.ad,
         }
         Api.getContent(payload, renderContent)
     }
